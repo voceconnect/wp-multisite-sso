@@ -1,0 +1,8 @@
+# system files
+.htaccess
+.htpasswd
+.DS_Store
+Thumbs.db
+sitemap.xml*
+*.sass-cache
+node_modules
