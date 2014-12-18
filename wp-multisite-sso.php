@@ -9,9 +9,8 @@
  */
 
 /*
- * This plugin uses the main blog as the control for if a user's authentication
- * with the sub sites of the network. It currently assumes that a user is can be
- * authorized on the main blog of the network.
+ * This plugin will login/logout a user to the network sites using WP login/logout
+ * functions.
  */
 class WP_MultiSite_SSO {
 	const USER_META_KEY = 'multisite-sso';
@@ -25,15 +24,13 @@ class WP_MultiSite_SSO {
 		if ( !is_multisite() )
 			return;
 
-		// if requesting to sso login
+		// if requesting to sso login/logout
 		if ( isset( $_REQUEST['action'] ) && ( self::LOGIN_ACTION === $_REQUEST['action'] ) && isset( $_REQUEST['sso'] ) ) {
 			self::authenticate_user_on_blog();
 			return;
 		} elseif ( isset( $_REQUEST['action'] ) && ( self::LOGOUT_ACTION === $_REQUEST['action'] ) ) {
-			wp_logout();
-			// forcing redirect to cookies are removed
-			wp_safe_redirect();
-			die;
+			self::unauthenticate_user_on_blog();
+			return;
 		}
 
 		// hook in to login/logout
@@ -41,35 +38,64 @@ class WP_MultiSite_SSO {
 		add_action( 'wp_logout', array( __CLASS__, 'handle_logout' ) );
 	}
 
+	/**
+	 * Gets a list of the sites on the network, using the domain mapping plugin
+	 * domains if the plugin is in use.
+	 * @param type $network_sites
+	 * @return type
+	 */
 	public static function get_network_sites( $network_sites = array() ) {
+		$network_sites = array();
+
 		// get list of sites
-		$site_list = wp_get_sites();
+		$sites = wp_get_sites();
+		// assign domain to site associated by blog id
+		foreach( $sites as $site ) {
+			if ( !isset( $site['blog_id'] ) || !isset( $site['domain'] ) )
+				continue;
 
-		$network_sites = array_map( function( $site_object ) {
-			$blog_id = ( $site_object['blog_id'] ) ? $site_object['blog_id'] : false;
+			$network_sites[$site['blog_id']] = esc_url( $site['domain'] );
+		}
 
-			$blog_url = false;
-			if ( !empty( $blog_id ) )
-				$blog_url = get_site_url( $blog_id );
+		// if domain mapping exists, attempt to map the sites to the mapped domain
+		$mapped_domains = self::get_domain_mapped_blogs();
 
-			return $blog_url;
-		}, $site_list );
+		foreach( $mapped_domains as $mapped_domain ) {
+			if ( !isset( $mapped_domain->domain ) || !isset( $mapped_domain->blog_id ) )
+				continue;
 
-		// remove any duplicates or empty values
-		$network_sites = array_unique( $network_sites );
+			$network_sites[$mapped_domain->blog_id] = esc_url( $mapped_domain->domain );
+		}
 
 		return $network_sites;
 	}
 
 	/**
-	 * Handles sign a user into the main blog when a user logins in to a sub site.
+	 * Get the mapped domains if the Domain Mapping plugin is used
+	 * @global type $wpdb
+	 * @return type
+	 */
+	public static function get_domain_mapped_blogs() {
+		global $wpdb;
+
+		if ( !function_exists( 'dm_text_domain' ) )
+			return array();
+
+		$mapped_domains = $wpdb->get_results( "SELECT blog_id, domain FROM {$wpdb->dmtable} WHERE active = 1", OBJECT_K );
+
+		return empty( $mapped_domains ) ? array() : (array) $mapped_domains;
+	}
+
+	/**
+	 * Provides the functionality to sign the user in to the network sites once
+	 * they have signed in to the current blog.
 	 * @global type $current_site
 	 * @param type $username
 	 * @param type $user
 	 */
 	public static function handle_login( $username, $user ) {
 		global $current_site;
-		
+
 		// setup variables
 		$time      = time();
 		$user_hash = md5( sprintf( self::$user_hash_md5_format, $user->ID ) );
@@ -102,7 +128,10 @@ class WP_MultiSite_SSO {
 		die;
 	}
 
-	public static function authenticate_user_on_blog() {
+	/**
+	 * Logic to authenticate a user if the request is a `self:LOGIN_ACTION`
+	 */
+	private static function authenticate_user_on_blog() {
 		// verify is a sso login request
 		if ( !isset( $_REQUEST['action'] ) || ( isset( $_REQUEST['action'] ) && ( self::LOGIN_ACTION !== $_REQUEST['action'] ) ) || !isset( $_REQUEST['sso'] ) )
 			return;
@@ -153,11 +182,15 @@ class WP_MultiSite_SSO {
 		wp_set_auth_cookie( $sso_user_id, true );
 
 		// force redirect so ensure cookies apply
-		wp_safe_redirect();
+		wp_safe_redirect( home_url() );
 
 		die;
 	}
 
+	/**
+	 * Provides the functionality to log a user out of the network sites when they have
+	 * signed out of the current blog.
+	 */
 	public static function handle_logout() {
 		// create a blank sso object for logout
 		$sso = array();
@@ -166,6 +199,18 @@ class WP_MultiSite_SSO {
 		$action = self::LOGOUT_ACTION;
 
 		include __DIR__ . '/inc/sso.php';
+
+		die;
+	}
+
+	/**
+	 * Logic to unauthenticate a user is the request is a `self:LOGOUT_ACTION'
+	 */
+	private static function unauthenticate_user_on_blog() {
+		wp_logout();
+
+		// forcing redirect to ensure cookies are removed
+		wp_safe_redirect( home_url() );
 
 		die;
 	}
