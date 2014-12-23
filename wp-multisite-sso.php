@@ -100,26 +100,39 @@ class WP_MultiSite_SSO {
 		$time      = time();
 		$user_hash = md5( sprintf( self::$user_hash_md5_format, $user->ID ) );
 
-		// add reference to hash to the user's meta, mask names in meta
-		$user_meta = array(
-			'key'   => $user_hash,
-			'value' => $time
-		);
-		update_user_meta( $user->ID, self::USER_META_KEY, $user_meta );
+		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( home_url() ) );
 
-		// build the sso object to send
-		$sso_object = array(
-			'user_hash' => $user_hash,
-			'user_id'   => $user->ID,
-			'blog_id'   => get_current_blog_id()
-		);
-
-		// encode the sso object
-		$sso_object = json_encode( $sso_object );
+		$current_blog_id = get_current_blog_id();
+		foreach( array_keys( $network_sites ) as $blog_id ) {
+			// build the sso objects to send
+			$sso_objects[$blog_id] = array(
+				'user_hash'    => $user_hash,
+				'user_id'      => $user->ID,
+				'src_blog_id'  => $current_blog_id,
+				'dest_blog_id' => $blog_id,
+				'timestamp'    => $time
+			);
+		}
 
 		// encrypt the sso object
 		$iv  = mcrypt_create_iv( mcrypt_get_iv_size( MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB ), MCRYPT_RAND );
-		$sso = base64_encode( mcrypt_encrypt( MCRYPT_RIJNDAEL_128, substr( AUTH_SALT, 0, 32 ), $sso_object, MCRYPT_MODE_ECB, $iv ) );
+
+		$sso_objects = array_map( function( $sso_object ) use ( $iv ) {
+			// encode the sso object
+			$sso_object = json_encode( $sso_object );
+			return base64_encode( mcrypt_encrypt( MCRYPT_RIJNDAEL_128, substr( AUTH_SALT, 0, 32 ), $sso_object, MCRYPT_MODE_ECB, $iv ) );
+		}, $sso_objects );
+
+		// add reference to hash to the user's meta, store the time and all sso objects
+		$user_meta = array(
+			'hash'  => $user_hash,
+			'value' => array(
+				'timestamp' => $time,
+				'keys'      => $sso_objects
+			)
+		);
+
+		update_user_meta( $user->ID, self::USER_META_KEY, $user_meta );
 
 		$action = self::LOGIN_ACTION;
 
@@ -137,7 +150,8 @@ class WP_MultiSite_SSO {
 			return;
 
 		// setup vars
-		$sso = base64_decode( esc_attr( $_REQUEST['sso'] ) );
+		$request_sso = $_REQUEST['sso'];
+		$sso         = base64_decode( esc_attr( $request_sso ) );
 
 		// decrypt the sso object
 		$iv  = mcrypt_create_iv( mcrypt_get_iv_size( MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB ), MCRYPT_RAND );
@@ -149,26 +163,34 @@ class WP_MultiSite_SSO {
 		if ( empty( $sso_object ) )
 			return;
 
-		$sso_user_hash = isset( $sso_object->user_hash ) ? $sso_object->user_hash : false;
-		$sso_user_id   = isset( $sso_object->user_id ) ? $sso_object->user_id : false;
-		$sso_blog_id   = isset( $sso_object->blog_id ) ? $sso_object->blog_id : false;
+		$sso_user_hash    = isset( $sso_object->user_hash ) ? $sso_object->user_hash : false;
+		$sso_user_id      = isset( $sso_object->user_id ) ? $sso_object->user_id : false;
+		$sso_src_blog_id  = isset( $sso_object->src_blog_id ) ? $sso_object->src_blog_id : false;
+		$sso_dest_blog_id = isset( $sso_object->dest_blog_id ) ? $sso_object->dest_blog_id : false;
+		$sso_timestamp    = isset( $sso_object->timestamp ) ? $sso_object->timestamp : false;
 
 		// dont continue if one of these sso object values do not exist
-		if ( empty( $sso_user_hash ) || empty( $sso_user_id ) || empty( $sso_blog_id ) )
+		if ( empty( $sso_user_hash ) || empty( $sso_user_id ) || empty( $sso_src_blog_id ) || empty( $sso_dest_blog_id ) || empty( $sso_timestamp ) )
 			return;
 
 		// obtain multisite sso user_meta of the specified user
 		$user_meta = get_user_meta( $sso_user_id, self::USER_META_KEY, true );
 
 		// dont continue if the value does not exist
-		if ( !$user_meta )
+		if ( empty( $user_meta ) )
 			return;
 
-		// dont continue if one of the user meta objects fo not exist
-		$user_hash = isset( $user_meta['key'] ) ? $user_meta['key'] : false;
-		$timestamp = isset( $user_meta['value'] ) ? $user_meta['value'] : false;
+		// dont continue if one of the user meta objects does not exist
+		$user_hash = isset( $user_meta['hash'] ) ? $user_meta['hash'] : false;
+		$meta_data = isset( $user_meta['value'] ) ? $user_meta['value'] : false;
 
-		if ( !$user_hash || !$timestamp )
+		if ( empty( $user_hash ) || empty( $meta_data ) )
+			return;
+
+		$timestamp       = isset( $meta_data['timestamp'] ) ? $meta_data['timestamp'] : false;
+		$encryption_keys = isset( $meta_data['keys'] ) ? $meta_data['keys'] : false;
+		// make sure the encryption keys and timestamp exist
+		if ( empty( $timestamp ) || empty( $encryption_keys ) )
 			return;
 
 		// dont continue if the timestamp has expired (is older than 2 minutes) or user hashes do not match
@@ -178,11 +200,19 @@ class WP_MultiSite_SSO {
 			return;
 		}
 
+		// dont continue if the encryption key does not exist in the keys
+		// if it does exist, remove the key from the list of keys to ensure
+		// the key is only used once
+		if ( in_array( $request_sso, $encryption_keys ) ) {
+			$encryption_keys = array_diff( $encryption_keys, array( $request_sso ) );
+			$user_meta['value']['keys'] = $encryption_keys;
+			update_user_meta( $sso_user_id, self::USER_META_KEY, $user_meta );
+		} else {
+			return;
+		}
+
 		// everything checks out, so authenticate the user in on the main blog
 		wp_set_auth_cookie( $sso_user_id, true );
-
-		// force redirect so ensure cookies apply
-		wp_safe_redirect( home_url() );
 
 		die;
 	}
@@ -192,8 +222,8 @@ class WP_MultiSite_SSO {
 	 * signed out of the current blog.
 	 */
 	public static function handle_logout() {
-		// create a blank sso object for logout
-		$sso = array();
+		// create a blank sso objects for logout
+		$sso_objects = array();
 		
 		// set logout action
 		$action = self::LOGOUT_ACTION;
@@ -208,9 +238,6 @@ class WP_MultiSite_SSO {
 	 */
 	private static function unauthenticate_user_on_blog() {
 		wp_logout();
-
-		// forcing redirect to ensure cookies are removed
-		wp_safe_redirect( home_url() );
 
 		die;
 	}
