@@ -1,0 +1,16 @@
+{
+	"name": "voceconnect/wp-multisite-sso",
+	"type": "wordpress-plugin",
+	"license": "GPLv2+",
+    "authors": [
+        {
+            "name": "Sean McCafferty",
+            "email": "seanmcc@voceconnect.com"
+        }
+    ],
+    "config": {
+        "vendor-dir": "vendor"
+    },
+    "require": {
+    }
+}

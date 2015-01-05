@@ -16,6 +16,7 @@ class WP_MultiSite_SSO {
 	const USER_META_KEY = 'multisite-sso';
 	const LOGIN_ACTION  = 'sso-login';
 	const LOGOUT_ACTION = 'sso-logout';
+	const SETTINGS_SLUG = 'wp_multisite_sso_settings';
 
 	private static $user_hash_md5_format = 'multsite_sso-user_id-%s';
 
@@ -243,3 +244,6 @@ class WP_MultiSite_SSO {
 	}
 }
 add_action( 'init', array( 'WP_MultiSite_SSO', 'init' ) );
+
+if ( is_admin() )
+	include __DIR__ . '/admin/admin.php';
