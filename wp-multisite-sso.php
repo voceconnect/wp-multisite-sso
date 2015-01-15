@@ -156,7 +156,7 @@ class WP_MultiSite_SSO {
 
 		// decrypt the sso object
 		$iv  = mcrypt_create_iv( mcrypt_get_iv_size( MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB ), MCRYPT_RAND );
-		$sso = mcrypt_decrypt( MCRYPT_RIJNDAEL_128, substr( AUTH_SALT, 0, 32 ), $sso, MCRYPT_MODE_ECB, $iv );
+		$sso = rtrim( mcrypt_decrypt( MCRYPT_RIJNDAEL_128, substr( AUTH_SALT, 0, 32 ), $sso, MCRYPT_MODE_ECB, $iv ), "\0");
 
 		$sso_object = json_decode( $sso );
 
