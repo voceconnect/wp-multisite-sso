@@ -37,6 +37,9 @@ class WP_MultiSite_SSO {
 		// hook in to login/logout
 		add_action( 'wp_login', array( __CLASS__, 'handle_login' ), 10, 2 );
 		add_action( 'wp_logout', array( __CLASS__, 'handle_logout' ) );
+		add_action( 'login_enqueue_scripts', function() {
+			wp_enqueue_script( 'jquery' );
+		} );
 	}
 
 	/**
