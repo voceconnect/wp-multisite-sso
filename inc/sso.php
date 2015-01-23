@@ -39,31 +39,56 @@ $login_header_title = get_current_site()->site_name;
 ?>
 <html>
 	<head>
-		<script>
-			function loadSite(site) {
-				var ssoImg = document.createElement("img");
-				ssoImg.setAttribute('src', site);
-			}
-			function seqLoadSites() {
-				var sites = <?php echo json_encode( $sso_sites ); ?>;
-				for (site in sites){
-					loadSite(sites[site]);
-				}
-				loadComplete();
-			}
-			function loadComplete(){
-			   window.location="<?php echo home_url(); ?>";
-			}
-			window.addEventListener("load", seqLoadSites, false);
-		</script>
 		<?php
 		if ( !empty( $load_wp_css ) )
 			wp_admin_css( 'login', true );
 
-		if ( !empty( $load_custom_css ) ) {
-			do_action( 'login_enqueue_scripts' );
+		do_action( 'login_enqueue_scripts' );
+		wp_print_scripts( array( 'jquery' ) );
+		?>
+		<script>
+			(function($){
+				var sites_list, sites_to_load;
+
+				function loadSitesHelper(sites_to_load) {
+					window.setTimeout(2000);
+					
+					if (sites_to_load.length > 0) {
+						var site = sites_to_load.shift();
+
+						$.ajax({
+							url: site,
+							type: 'POST',
+							async: false,
+							cache: false,
+							timeout: 15000,
+							crossDomain: true,
+							dataType: 'jsonp',
+							error: function() {
+								loadSitesHelper(sites_to_load);
+							},
+							success: function(msg) {
+								loadSitesHelper(sites_to_load);
+							}
+						});
+					} else {
+						loadComplete();
+					}
+				}
+				function seqLoadSites() {
+					sites_to_load = sites_list = <?php echo json_encode( $sso_sites ); ?>;
+
+					loadSitesHelper(sites_to_load);
+				}
+				function loadComplete(){
+				   window.location="<?php echo home_url(); ?>";
+				}
+				window.addEventListener("load", seqLoadSites, false);
+			})(jQuery);
+		</script>
+		<?php
+		if ( !empty( $load_custom_css ) )
 			wp_print_styles();
-		}
 
 		if ( !empty( $custom_css ) )
 			printf( '<style type="text/css">%s</style>', esc_attr( $custom_css ) );
