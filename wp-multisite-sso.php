@@ -107,6 +107,19 @@ class WP_MultiSite_SSO {
 		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( home_url() ) );
 
 		$current_blog_id = get_current_blog_id();
+
+		// IP address.
+		$ip_address = '';
+		if ( !empty( $_SERVER['REMOTE_ADDR'] ) ) {
+			$ip_address = $_SERVER['REMOTE_ADDR'];
+		}
+
+		// User-agent.
+		$user_agent = '';
+		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {
+			$user_agent = wp_unslash( $_SERVER['HTTP_USER_AGENT'] );
+		}
+
 		foreach( array_keys( $network_sites ) as $blog_id ) {
 			// build the sso objects to send
 			$sso_objects[$blog_id] = array(
@@ -114,7 +127,9 @@ class WP_MultiSite_SSO {
 				'user_id'      => $user->ID,
 				'src_blog_id'  => $current_blog_id,
 				'dest_blog_id' => $blog_id,
-				'timestamp'    => $time
+				'timestamp'    => $time,
+				'ip_address'   => $ip_address,
+				'user_agent'   => $user_agent
 			);
 		}
 
@@ -175,6 +190,22 @@ class WP_MultiSite_SSO {
 		$sso_src_blog_id  = isset( $sso_object->src_blog_id ) ? $sso_object->src_blog_id : false;
 		$sso_dest_blog_id = isset( $sso_object->dest_blog_id ) ? $sso_object->dest_blog_id : false;
 		$sso_timestamp    = isset( $sso_object->timestamp ) ? $sso_object->timestamp : false;
+		$sso_ip_address   = isset( $sso_object->ip_address ) ? $sso_object->ip_address : '';
+		$sso_user_agent   = isset( $sso_object->user_agent ) ? $sso_object->user_agent : '';
+
+		// dont continue if the ip address does not match the sso object's
+		$ip_address = '';
+		if ( !empty( $_SERVER['REMOTE_ADDR'] ) )
+			$ip_address = $_SERVER['REMOTE_ADDR'];
+		if ( $ip_address !== $sso_ip_address )
+			return;
+
+		// dont continue if the user-agent does not match the sso object's
+		$user_agent = '';
+		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) )
+			$user_agent = wp_unslash( $_SERVER['HTTP_USER_AGENT'] );
+		if ( $user_agent !== $sso_user_agent )
+			return;
 
 		// dont continue if one of these sso object values do not exist
 		if ( empty( $sso_user_hash ) || empty( $sso_user_id ) || empty( $sso_src_blog_id ) || empty( $sso_dest_blog_id ) || empty( $sso_timestamp ) )
