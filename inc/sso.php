@@ -1,4 +1,5 @@
 <?php
+// failsafe to allow direct calls to the template
 if ( is_null( $sso_objects ) || is_null( $action ) )
 	die;
 
@@ -53,7 +54,7 @@ $login_header_title = get_current_site()->site_name;
 		<script>			
 			var sites_list, sites_to_load;
 
-			// callback to perform any logic based on the reponse
+			// callback to perform any logic based on the ajax response
 			function loadSitesCB(data) {
 				loadSitesHelper(data);
 			}
@@ -96,12 +97,12 @@ $login_header_title = get_current_site()->site_name;
 				loadSitesHelper();
 			}
 
-			// send the user back to the main page after SSO login
+			// send the user back to the main page after SSO login/logout
 			function loadComplete(){
 			   window.location="<?php echo home_url(); ?>";
 			}
 
-			// start the login logic after the sso page has loaded
+			// start the login/logout logic after the sso page has loaded
 			window.addEventListener("load", seqLoadSites, false);
 		</script>
 		<?php
@@ -109,11 +110,11 @@ $login_header_title = get_current_site()->site_name;
 		if ( !empty( $load_custom_css ) )
 			wp_print_styles();
 
-		// include CSS specified on SSO settings page
+		// include any CSS specified on SSO settings page
 		if ( !empty( $custom_css ) )
 			printf( '<style type="text/css">%s</style>', esc_attr( $custom_css ) );
 
-		// do any custom actions for the SSO login page
+		// do any custom actions for the SSO login/logout page
 		do_action( 'sso_head' );
 		?>
 	</head>

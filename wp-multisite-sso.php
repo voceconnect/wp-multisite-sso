@@ -10,7 +10,9 @@
 
 /*
  * This plugin will login/logout a user to the network sites using WP login/logout
- * functions.
+ * functions. Usually implemented on a domain mapped environment - This plugin makes
+ * use of JSONP in order to make cross domain calls, while this protocol is usually
+ * enabled by default on web servers, this plugin will fail to work if it is not enabled.
  */
 class WP_MultiSite_SSO {
 	const USER_META_KEY = 'multisite-sso';
@@ -161,7 +163,7 @@ class WP_MultiSite_SSO {
 	}
 
 	/**
-	 * Logic to authenticate a user if the request is a `self:LOGIN_ACTION`. Acting as a json response
+	 * Logic to authenticate a user if the request is a `self:LOGIN_ACTION`. Acting as a JSONP response
 	 * to allow a cross domain request
 	 */
 	private static function authenticate_user_on_blog() {
@@ -274,7 +276,7 @@ class WP_MultiSite_SSO {
 	}
 
 	/**
-	 * Logic to unauthenticate a user is the request is a `self:LOGOUT_ACTION'. Acting as a json response
+	 * Logic to unauthenticate a user is the request is a `self:LOGOUT_ACTION'. Acting as a JSONP response
 	 * to allow a cross domain request
 	 */
 	private static function unauthenticate_user_on_blog() {
