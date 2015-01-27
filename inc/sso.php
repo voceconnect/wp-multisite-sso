@@ -40,59 +40,80 @@ $login_header_title = get_current_site()->site_name;
 <html>
 	<head>
 		<?php
+		// include the WordPress login page CSS
 		if ( !empty( $load_wp_css ) )
 			wp_admin_css( 'login', true );
 
+		// allows the use of wp_enqueue_script
 		do_action( 'login_enqueue_scripts' );
+
+		// include jQuery
 		wp_print_scripts( array( 'jquery' ) );
 		?>
-		<script>
-			(function($){
-				var sites_list, sites_to_load;
+		<script>			
+			var sites_list, sites_to_load;
 
-				function loadSitesHelper(sites_to_load) {
-					window.setTimeout(2000);
-					
+			// callback to perform any logic based on the reponse
+			function loadSitesCB(data) {
+				loadSitesHelper(data);
+			}
+
+			// helper function that will make the ajax request to log a
+			// user in to another one of the network sites
+			function loadSitesHelper() {
+				window.setTimeout(2000);
+
+				(function($){
 					if (sites_to_load.length > 0) {
 						var site = sites_to_load.shift();
-
 						$.ajax({
 							url: site,
-							type: 'POST',
-							async: false,
 							cache: false,
-							timeout: 15000,
+							timeout: 2000,
 							crossDomain: true,
 							dataType: 'jsonp',
-							error: function() {
-								loadSitesHelper(sites_to_load);
-							},
-							success: function(msg) {
-								loadSitesHelper(sites_to_load);
-							}
+							jsonpCallback: 'loadSitesCB'
+						})
+						.success(function(data, textStatus, jqXHR) {
+								// handled in the jsonp callback
+						})
+						.fail(function(jqXHR, textStatus, errorThrown) {
+								loadSitesHelper();
+						})
+						.done(function(data, textStatus, jqXHR) {
+								// no logic needed
 						});
 					} else {
 						loadComplete();
 					}
-				}
-				function seqLoadSites() {
-					sites_to_load = sites_list = <?php echo json_encode( $sso_sites ); ?>;
+				})(jQuery);
+			}
 
-					loadSitesHelper(sites_to_load);
-				}
-				function loadComplete(){
-				   window.location="<?php echo home_url(); ?>";
-				}
-				window.addEventListener("load", seqLoadSites, false);
-			})(jQuery);
+			// initial function to aggreigate the sites to authenticate
+			function seqLoadSites() {
+				sites_to_load = sites_list = <?php echo json_encode( $sso_sites ); ?>;
+
+				loadSitesHelper();
+			}
+
+			// send the user back to the main page after SSO login
+			function loadComplete(){
+			   window.location="<?php echo home_url(); ?>";
+			}
+
+			// start the login logic after the sso page has loaded
+			window.addEventListener("load", seqLoadSites, false);
 		</script>
 		<?php
+		// include custom WordPress login CSS
 		if ( !empty( $load_custom_css ) )
 			wp_print_styles();
 
+		// include CSS specified on SSO settings page
 		if ( !empty( $custom_css ) )
 			printf( '<style type="text/css">%s</style>', esc_attr( $custom_css ) );
 
+		// do any custom actions for the SSO login page
 		do_action( 'sso_head' );
 		?>
 	</head>

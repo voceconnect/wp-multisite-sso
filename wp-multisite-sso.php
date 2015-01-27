@@ -146,9 +146,12 @@ class WP_MultiSite_SSO {
 	}
 
 	/**
-	 * Logic to authenticate a user if the request is a `self:LOGIN_ACTION`
+	 * Logic to authenticate a user if the request is a `self:LOGIN_ACTION`. Acting as a json response
+	 * to allow a cross domain request
 	 */
 	private static function authenticate_user_on_blog() {
+		header('Content-type: application/javascript; charset=utf-8');
+
 		// verify is a sso login request
 		if ( !isset( $_REQUEST['action'] ) || ( isset( $_REQUEST['action'] ) && ( self::LOGIN_ACTION !== $_REQUEST['action'] ) ) || !isset( $_REQUEST['sso'] ) )
 			return;
@@ -218,6 +221,8 @@ class WP_MultiSite_SSO {
 		// everything checks out, so authenticate the user in on the main blog
 		wp_set_auth_cookie( $sso_user_id, true );
 
+		echo 'loadSitesCB' . "({'user_status': 'auth'})";
+
 		die;
 	}
 
@@ -238,10 +243,15 @@ class WP_MultiSite_SSO {
 	}
 
 	/**
-	 * Logic to unauthenticate a user is the request is a `self:LOGOUT_ACTION'
+	 * Logic to unauthenticate a user is the request is a `self:LOGOUT_ACTION'. Acting as a json response
+	 * to allow a cross domain request
 	 */
 	private static function unauthenticate_user_on_blog() {
+		header('Content-type: application/javascript; charset=utf-8');
+
 		wp_logout();
+
+		echo 'loadSitesCB' . "({'user_status': 'unauth'})";
 
 		die;
 	}
