@@ -8,9 +8,7 @@
             "email": "seanmcc@voceconnect.com"
         }
     ],
-    "config": {
-        "vendor-dir": "vendor"
-    },
     "require": {
+        "composer/installers": "~1.0"
     }
 }
