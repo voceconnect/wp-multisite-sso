@@ -1,14 +1,14 @@
 {
-	"name": "voceconnect/wp-multisite-sso",
-	"type": "wordpress-plugin",
-	"license": "GPLv2+",
-    "authors": [
-        {
-            "name": "Sean McCafferty",
-            "email": "seanmcc@voceconnect.com"
-        }
-    ],
-    "require": {
-        "composer/installers": "~1.0"
+  "name": "voceconnect/wp-multisite-sso",
+  "type": "wordpress-plugin",
+  "license": "GPLv2+",
+  "authors": [
+    {
+      "name": "Sean McCafferty",
+      "email": "seanmcc@voceconnect.com"
     }
+  ],
+  "require": {
+    "composer/installers": "~1.0"
+  }
 }
