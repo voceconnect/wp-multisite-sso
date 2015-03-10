@@ -47,17 +47,34 @@ class WP_MultiSite_SSO {
 	/**
 	 * Gets a list of the sites on the network, using the domain mapping plugin
 	 * domains if the plugin is in use.
-	 * @param type $network_sites
+	 * @param type $args
 	 * @return type
 	 */
-	public static function get_network_sites( $network_sites = array() ) {
+	public static function get_network_sites( $args = array() ) {
+		$defaults = array(
+			'for_user' => false
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		extract( $args );
+
 		$network_sites = array();
+		$userdata      = array();
+		$for_user      = isset( $args['for_user'] ) ? intval( $args['for_user'] ) : false;
+
+		if ( $for_user )
+			$userdata = get_userdata( $for_user );
 
 		// get list of sites
 		$sites = wp_get_sites();
 		// assign domain to site associated by blog id
 		foreach( $sites as $site ) {
 			if ( !isset( $site['blog_id'] ) || !isset( $site['domain'] ) )
+				continue;
+
+			// don't add the site if the user does not have a role on the site
+			if ( $for_user && !self::_can_user_access_blog( $userdata, $site['blog_id'] ) )
 				continue;
 
 			$network_sites[$site['blog_id']] = esc_url( $site['domain'] );
@@ -70,10 +87,27 @@ class WP_MultiSite_SSO {
 			if ( !isset( $mapped_domain->domain ) || !isset( $mapped_domain->blog_id ) )
 				continue;
 
+			// don't add the site if the user does not have a role on the site
+			if ( $for_user && !self::_can_user_access_blog( $userdata, $mapped_domain->blog_id ) )
+				continue;
+
 			$network_sites[$mapped_domain->blog_id] = esc_url( $mapped_domain->domain );
 		}
 
 		return $network_sites;
+	}
+
+	private static function _can_user_access_blog( $userdata, $blog_id ) {
+		if ( empty( $userdata ) )
+			return false;
+
+		$userdata->for_blog( $blog_id );
+
+		// if the user has a basic ability to read posts they can access the blog
+		if ( $userdata->has_cap( 'read' ) )
+			return true;
+
+		return false;
 	}
 
 	/**
@@ -106,7 +140,7 @@ class WP_MultiSite_SSO {
 		$time      = time();
 		$user_hash = md5( sprintf( self::$user_hash_md5_format, $user->ID ) );
 
-		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( home_url() ) );
+		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites( array( 'for_user' => $user->ID ) ), array( home_url() ) );
 
 		$current_blog_id = get_current_blog_id();
 
@@ -155,7 +189,9 @@ class WP_MultiSite_SSO {
 
 		update_user_meta( $user->ID, self::USER_META_KEY, $user_meta );
 
-		$action = self::LOGIN_ACTION;
+		// variables needed to use SSO template
+		$action  = self::LOGIN_ACTION;
+		$user_id = $user->ID;
 
 		include __DIR__ . '/inc/sso.php';
 		
@@ -269,6 +305,9 @@ class WP_MultiSite_SSO {
 		
 		// set logout action
 		$action = self::LOGOUT_ACTION;
+
+		// set user
+		$user_id = get_current_user_id();
 
 		include __DIR__ . '/inc/sso.php';
 

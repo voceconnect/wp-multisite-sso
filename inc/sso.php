@@ -1,13 +1,13 @@
 <?php
 // failsafe to allow direct calls to the template
-if ( is_null( $sso_objects ) || is_null( $action ) )
+if ( is_null( $sso_objects ) || is_null( $action ) || is_null( $user_id ) )
 	die;
 
 $site_args = array(
 	'action' => $action
 );
 
-$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( home_url() ) );
+$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites( array( 'for_user' => $user_id ) ), array( home_url() ) );
 
 // add the site args to each site
 $sso_sites = array();
