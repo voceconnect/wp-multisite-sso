@@ -7,7 +7,7 @@ $site_args = array(
 	'action' => $action
 );
 
-$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( home_url() ) );
+$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( esc_url( home_url() ) ) );
 
 // add the site args to each site
 $sso_sites = array();
@@ -17,7 +17,7 @@ foreach( $network_sites as $blog_id => $blog_url ) {
 		$blog_args['sso'] = urlencode( $sso_objects[$blog_id] );
 	}
 
-	$sso_sites[] = add_query_arg( $blog_args, $blog_url );
+	$sso_sites[] = esc_url_raw( add_query_arg( $blog_args, $blog_url ) );
 }
 
 $body_text = __( 'Please wait...', 'wp-multisite-sso' );
@@ -99,7 +99,7 @@ $login_header_title = get_current_site()->site_name;
 
 			// send the user back to the main page after SSO login/logout
 			function loadComplete(){
-			   window.location="<?php echo home_url(); ?>";
+			   window.location="<?php echo esc_url( home_url() ); ?>";
 			}
 
 			// start the login/logout logic after the sso page has loaded

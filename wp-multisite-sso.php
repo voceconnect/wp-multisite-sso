@@ -106,7 +106,7 @@ class WP_MultiSite_SSO {
 		$time      = time();
 		$user_hash = md5( sprintf( self::$user_hash_md5_format, $user->ID ) );
 
-		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( home_url() ) );
+		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( esc_url( home_url() ) ) );
 
 		$current_blog_id = get_current_blog_id();
 
