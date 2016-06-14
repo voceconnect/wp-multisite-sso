@@ -158,7 +158,7 @@ class WP_MultiSite_SSO {
 		$action = self::LOGIN_ACTION;
 
 		include __DIR__ . '/inc/sso.php';
-		
+
 		die;
 	}
 

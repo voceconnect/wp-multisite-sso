@@ -38,7 +38,7 @@ $body_classes = apply_filters( 'sso_login_logout_body_class', $body_classes, $ac
 $login_header_url   = network_home_url();
 $login_header_title = get_current_site()->site_name;
 
-$redirect = esc_url( home_url() );
+$redirect = home_url();
 
 /**
  * Filter the redirect location.
@@ -62,7 +62,7 @@ $redirect = apply_filters( 'wp_multisite_sso_redirect', $redirect, $action, $use
 		// include jQuery
 		wp_print_scripts( array( 'jquery' ) );
 		?>
-		<script>			
+		<script>
 			var sites_list, sites_to_load;
 
 			// callback to perform any logic based on the ajax response
@@ -110,7 +110,7 @@ $redirect = apply_filters( 'wp_multisite_sso_redirect', $redirect, $action, $use
 
 			// send the user back to the main page after SSO login/logout
 			function loadComplete(){
-			   window.location="<?php echo $redirect; ?>";
+			   window.location="<?php echo esc_url( $redirect ); ?>";
 			}
 
 			// start the login/logout logic after the sso page has loaded
