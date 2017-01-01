@@ -17,6 +17,11 @@ foreach( $network_sites as $blog_id => $blog_url ) {
 		$blog_args['sso'] = urlencode( $sso_objects[$blog_id] );
 	}
 
+	// check if current request is being sent over HTTPS, if so, send requests over HTTPS instead of HTTP
+    if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == "on") {
+        $blog_url = str_replace("http", "https", $blog_url);
+    }
+
 	$sso_sites[] = esc_url_raw( add_query_arg( $blog_args, $blog_url ) );
 }
 
