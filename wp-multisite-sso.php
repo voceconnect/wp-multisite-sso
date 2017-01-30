@@ -54,13 +54,13 @@ class WP_MultiSite_SSO {
 		$network_sites = array();
 
 		// get list of sites
-		$sites = wp_get_sites();
+		$sites = get_sites();
 		// assign domain to site associated by blog id
 		foreach( $sites as $site ) {
-			if ( !isset( $site['blog_id'] ) || !isset( $site['domain'] ) )
+			if ( !isset( $site->blog_id ) || !isset( $site->domain ) )
 				continue;
 
-			$network_sites[$site['blog_id']] = esc_url( $site['domain'] );
+			$network_sites[$site->blog_id] = esc_url( $site->domain );
 		}
 
 		// if domain mapping exists, attempt to map the sites to the mapped domain
@@ -266,7 +266,7 @@ class WP_MultiSite_SSO {
 	public static function handle_logout() {
 		// create a blank sso objects for logout
 		$sso_objects = array();
-		
+
 		// set logout action
 		$action = self::LOGOUT_ACTION;
 
