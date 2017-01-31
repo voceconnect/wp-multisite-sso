@@ -54,13 +54,15 @@ class WP_MultiSite_SSO {
 		$network_sites = array();
 
 		// get list of sites
-		$sites = get_sites();
+		$sites = function_exists('get_sites') ? get_sites() : wp_get_sites();
+
 		// assign domain to site associated by blog id
 		foreach( $sites as $site ) {
-			if ( !isset( $site->blog_id ) || !isset( $site->domain ) )
+			$site = is_object( $site ) ? get_object_vars( $site ) : $site;
+			if ( !isset( $site['blog_id'] ) || !isset( $site['domain'] ) )
 				continue;
 
-			$network_sites[$site->blog_id] = esc_url( $site->domain );
+			$network_sites[$site['blog_id']] = esc_url( $site['domain'] );
 		}
 
 		// if domain mapping exists, attempt to map the sites to the mapped domain
