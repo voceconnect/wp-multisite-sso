@@ -33,7 +33,7 @@ $load_custom_css = isset( $sso_options['load_custom_css'] ) ? intval( $sso_optio
 $custom_css      = isset( $sso_options['loginout_css'] ) ? $sso_options['loginout_css'] : '';
 
 $body_classes = array( 'sso-body', 'login', 'login-action-login', 'wp-core-ui', 'locale-' . sanitize_html_class( strtolower( str_replace( '_', '-', get_locale() ) ) ) );
-$body_classes = apply_filters( 'sso_login_logout_body_class', $body_classes, $action );
+$body_classes = apply_filters( 'wp_multisite_sso-login_logout_body_class', $body_classes, $action );
 
 $login_header_url   = network_home_url();
 $login_header_title = get_current_site()->site_name;
@@ -48,7 +48,7 @@ if ( WP_MultiSite_SSO::LOGIN_ACTION === $action ) {
 	 * @param string   $action    The login or logout action being taken.
 	 * @param object   $user      The current user.
 	 */
-	$redirect = apply_filters( 'wp_multisite_sso_login_redirect', $redirect, $action, $user );
+	$redirect = apply_filters( 'wp_multisite_sso-login_redirect', $redirect, $action, $user );
 } else {
 	/**
 	 * Filter the redirect location after being logout.
@@ -56,7 +56,7 @@ if ( WP_MultiSite_SSO::LOGIN_ACTION === $action ) {
 	 * @param string   $redirect  The redirect location.
 	 * @param string   $action    The login or logout action being taken.
 	 */
-	$redirect = apply_filters( 'wp_multisite_sso_logout_redirect', $redirect, $action );
+	$redirect = apply_filters( 'wp_multisite_sso-logout_redirect', $redirect, $action );
 }
 ?>
 <html>
@@ -136,7 +136,7 @@ if ( WP_MultiSite_SSO::LOGIN_ACTION === $action ) {
 			printf( '<style type="text/css">%s</style>', esc_attr( $custom_css ) );
 
 		// do any custom actions for the SSO login/logout page
-		do_action( 'sso_head' );
+		do_action( 'wp_multisite_sso-sso_head' );
 		?>
 	</head>
 	<body class="<?php echo implode( ' ', $body_classes ); ?>">
