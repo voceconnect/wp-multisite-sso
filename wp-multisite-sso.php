@@ -62,7 +62,13 @@ class WP_MultiSite_SSO {
 			if ( !isset( $site['blog_id'] ) || !isset( $site['domain'] ) )
 				continue;
 
-			$network_sites[$site['blog_id']] = esc_url( $site['domain'] );
+			if ( isset( $_SERVER['HTTPS'] ) && 'on' === $_SERVER['HTTPS'] ) {
+				$site_url = sprintf( 'https://%s', $site['domain'] );
+			} else {
+				$site_url = sprintf( 'http://%s', $site['domain'] );
+			}
+
+			$network_sites[ $site['blog_id'] ] = esc_url( site_url );
 		}
 
 		// if domain mapping exists, attempt to map the sites to the mapped domain
