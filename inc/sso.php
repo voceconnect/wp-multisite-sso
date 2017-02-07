@@ -40,14 +40,24 @@ $login_header_title = get_current_site()->site_name;
 
 $redirect = home_url();
 
-/**
- * Filter the redirect location.
- * 
- * @param string   $redirect  The redirect location.
- * @param string   $action    The login or logout action being taken.
- * @param object   $user      The current user.
- */
-$redirect = apply_filters( 'wp_multisite_sso_redirect', $redirect, $action, $user );
+if ( WP_MultiSite_SSO::LOGIN_ACTION === $action ) {
+	/**
+	 * Filter the redirect location after being logged in.
+	 *
+	 * @param string   $redirect  The redirect location.
+	 * @param string   $action    The login or logout action being taken.
+	 * @param object   $user      The current user.
+	 */
+	$redirect = apply_filters( 'wp_multisite_sso_login_redirect', $redirect, $action, $user );
+} else {
+	/**
+	 * Filter the redirect location after being logout.
+	 *
+	 * @param string   $redirect  The redirect location.
+	 * @param string   $action    The login or logout action being taken.
+	 */
+	$redirect = apply_filters( 'wp_multisite_sso_logout_redirect', $redirect, $action );
+}
 ?>
 <html>
 	<head>
