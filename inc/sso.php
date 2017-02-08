@@ -151,7 +151,7 @@ if ( has_filter( 'wp_multisite_sso_redirect' ) ) {
 			printf( '<style type="text/css">%s</style>', esc_attr( $custom_css ) );
 
 		// do any custom actions for the SSO login/logout page
-		if ( has_filter( 'sso_head' ) ) {
+		if ( has_action( 'sso_head' ) ) {
 			// Deprecated since 1.1
 			_deprecated_function( 'The sso_head action', '1.1', 'wp_multisite_sso-sso_head' );
 			do_action( 'sso_head' );
