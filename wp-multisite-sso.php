@@ -105,8 +105,9 @@ class WP_MultiSite_SSO {
 		global $current_site;
 
 		// setup variables
-		$time      = time();
-		$user_hash = md5( sprintf( self::$user_hash_md5_format, $user->ID ) );
+		$sso_objects = array();
+		$time        = time();
+		$user_hash   = md5( sprintf( self::$user_hash_md5_format, $user->ID ) );
 
 		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( esc_url( home_url() ) ) );
 
@@ -268,6 +269,7 @@ class WP_MultiSite_SSO {
 	public static function handle_logout() {
 		// create a blank sso objects for logout
 		$sso_objects = array();
+		$user        = null;
 
 		// set logout action
 		$action = self::LOGOUT_ACTION;
