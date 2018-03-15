@@ -138,12 +138,16 @@ class WP_MultiSite_SSO {
 		}
 
 		// encrypt the sso object
-		$iv  = mcrypt_create_iv( mcrypt_get_iv_size( MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB ), MCRYPT_RAND );
+		$cipher = 'AES-128-ECB';
+		$iv     = openssl_random_pseudo_bytes( openssl_cipher_iv_length( $cipher ) );
 
-		$sso_objects = array_map( function( $sso_object ) use ( $iv ) {
+		$sso_objects = array_map( function( $sso_object ) use ( $iv, $cipher ) {
 			// encode the sso object
 			$sso_object = json_encode( $sso_object );
-			return base64_encode( mcrypt_encrypt( MCRYPT_RIJNDAEL_128, substr( AUTH_SALT, 0, 32 ), $sso_object, MCRYPT_MODE_ECB, $iv ) );
+
+			$cipher_raw = openssl_encrypt( $sso_object, $cipher, substr( AUTH_SALT, 0, 32 ), OPENSSL_RAW_DATA, $iv );
+			$hmac       = hash_hmac( 'sha256', $cipher_raw, substr( AUTH_SALT, 0, 32 ), true );
+			return base64_encode( $iv . $hmac . $cipher_raw );
 		}, $sso_objects );
 
 		// add reference to hash to the user's meta, store the time and all sso objects
@@ -176,14 +180,24 @@ class WP_MultiSite_SSO {
 			return;
 
 		// setup vars
+		$sso_object  = array();
 		$request_sso = $_REQUEST['sso'];
 		$sso         = base64_decode( esc_attr( $request_sso ) );
 
-		// decrypt the sso object
-		$iv  = mcrypt_create_iv( mcrypt_get_iv_size( MCRYPT_RIJNDAEL_128, MCRYPT_MODE_ECB ), MCRYPT_RAND );
-		$sso = rtrim( mcrypt_decrypt( MCRYPT_RIJNDAEL_128, substr( AUTH_SALT, 0, 32 ), $sso, MCRYPT_MODE_ECB, $iv ), "\0");
+		// Decrypt the SSO object.
+		$cipher     = 'AES-128-ECB';
+		$ivlen      = openssl_cipher_iv_length( $cipher );
+		$iv         = substr( $sso, 0, $ivlen );
+		$sha2len    = 32;
+		$hmac       = substr( $sso, $ivlen, $sha2len );
+		$cipher_raw = substr( $sso, $ivlen + $sha2len );
+		$sso        = openssl_decrypt( $cipher_raw, $cipher, substr( AUTH_SALT, 0, 32 ), OPENSSL_RAW_DATA, $iv );
 
-		$sso_object = json_decode( $sso );
+		// PHP 5.6+ timing attack safe comparison.
+		$calcmac = hash_hmac( 'sha256', $cipher_raw, substr( AUTH_SALT, 0, 32 ), true );
+		if ( hash_equals( $hmac, $calcmac ) ) {
+			$sso_object = json_decode( $sso );
+		}
 
 		// dont continue if sso_object doesn't exist
 		if ( empty( $sso_object ) )
