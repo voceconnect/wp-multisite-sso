@@ -53,6 +53,23 @@ class WP_MultiSite_SSO {
 	public static function get_network_sites( $network_sites = array() ) {
 		$network_sites = array();
 
+		/**
+		 * Filters the list of network sites for SSO before it is populated.
+		 *
+		 * Passing a non-null value to the filter will effectively short circuit
+		 * this method, returning that value instead.
+		 *
+		 * @since 1.x
+		 *
+		 * @param null $retval Return array with the blog ID as array key and domain URL as array value.
+		 */
+		$pre_get_sites = apply_filters( 'wp_multisite_sso_pre_get_network_sites', null );
+
+		// Allow developers to bail out of default network site lookup.
+		if ( null !== $pre_get_sites ) {
+			return $pre_get_sites;
+		}
+
 		// get list of sites
 		$sites = function_exists('get_sites') ? get_sites() : wp_get_sites();
 
