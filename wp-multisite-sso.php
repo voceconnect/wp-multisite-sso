@@ -110,6 +110,11 @@ class WP_MultiSite_SSO {
 
 		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( esc_url( home_url() ) ) );
 
+		// Bail if we have no network sites to login to.
+		if ( empty( $network_sites ) ) {
+			return;
+		}
+
 		$current_blog_id = get_current_blog_id();
 
 		// IP address.
@@ -266,6 +271,13 @@ class WP_MultiSite_SSO {
 	 * signed out of the current blog.
 	 */
 	public static function handle_logout() {
+		$network_sites = array_diff( WP_MultiSite_SSO::get_network_sites(), array( esc_url( home_url() ) ) );
+
+		// Bail if we have no network sites to logout of.
+		if ( empty( $network_sites ) ) {
+			return;
+		}
+
 		// create a blank sso objects for logout
 		$sso_objects = array();
 
