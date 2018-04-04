@@ -1,7 +1,7 @@
 {
   "name": "voceconnect/wp-multisite-sso",
   "type": "wordpress-plugin",
-  "license": "GPLv2+",
+  "license": "GPL-2.0-or-later",
   "authors": [
     {
       "name": "Sean McCafferty",
