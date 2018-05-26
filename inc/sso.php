@@ -120,7 +120,7 @@ if ( WP_MultiSite_SSO::LOGIN_ACTION === $action ) {
 
 			// send the user back to the main page after SSO login/logout
 			function loadComplete(){
-			   window.location="<?php echo esc_url( $redirect ); ?>";
+				window.location="<?php echo esc_url( apply_filters('wp-multisite-sso/redirect-to', home_url() ) ); ?>";
 			}
 
 			// start the login/logout logic after the sso page has loaded

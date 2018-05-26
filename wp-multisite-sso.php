@@ -62,6 +62,13 @@ class WP_MultiSite_SSO {
 			if ( !isset( $site['blog_id'] ) || !isset( $site['domain'] ) )
 				continue;
 
+            // add protocol to sites
+            if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') {
+                $site['domain'] = 'https://' . $site['domain'];
+            } else {
+                $site['domain'] = 'http://' . $site['domain'];
+            }
+
 			$network_sites[$site['blog_id']] = esc_url( $site['domain'] );
 		}
 
