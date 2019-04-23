@@ -62,7 +62,7 @@ class WP_MultiSite_SSO {
 			if ( !isset( $site['blog_id'] ) || !isset( $site['domain'] ) )
 				continue;
 
-			$network_sites[$site['blog_id']] = esc_url( $site['domain'] );
+			$network_sites[$site['blog_id']] = set_url_scheme( esc_url( $site['domain'] ), 'login' );
 		}
 
 		// if domain mapping exists, attempt to map the sites to the mapped domain
@@ -72,7 +72,7 @@ class WP_MultiSite_SSO {
 			if ( !isset( $mapped_domain->domain ) || !isset( $mapped_domain->blog_id ) )
 				continue;
 
-			$network_sites[$mapped_domain->blog_id] = esc_url( $mapped_domain->domain );
+			$network_sites[$mapped_domain->blog_id] = set_url_scheme( esc_url( $mapped_domain->domain ), 'login' );
 		}
 
 		return $network_sites;
