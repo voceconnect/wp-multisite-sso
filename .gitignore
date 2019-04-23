@@ -6,3 +6,4 @@ Thumbs.db
 sitemap.xml*
 *.sass-cache
 node_modules
+.idea/*
