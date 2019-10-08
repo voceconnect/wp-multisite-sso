@@ -72,7 +72,17 @@ class WP_MultiSite_SSO {
 			if ( !isset( $mapped_domain->domain ) || !isset( $mapped_domain->blog_id ) )
 				continue;
 
-			$network_sites[$mapped_domain->blog_id] = set_url_scheme( esc_url( $mapped_domain->domain ), 'login' );
+			$mapped_domain_login_host = set_url_scheme(
+				esc_url( $mapped_domain->domain ),
+				'login'
+			);
+
+			// Don't log into a mapped domain if its already in the list of network sites.
+			// (The same domain can appear as two different blogs, if one of
+			// them redirects as an "alias" of another.)
+			if ( ! in_array( $mapped_domain_login_host, $network_sites, true ) ) {
+				$network_sites[$mapped_domain->blog_id] = $mapped_domain_login_host;
+			}
 		}
 
 		return $network_sites;
