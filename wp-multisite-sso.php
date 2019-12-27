@@ -118,6 +118,8 @@ class WP_MultiSite_SSO {
 
 		$current_blog_id = get_current_blog_id();
 
+		$sso_objects = array();
+
 		// IP address.
 		$ip_address = '';
 		if ( !empty( $_SERVER['REMOTE_ADDR'] ) ) {
