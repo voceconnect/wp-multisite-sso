@@ -144,7 +144,7 @@ class WP_MultiSite_SSO {
 		}
 
 		// encrypt the sso object
-		$cipher = 'AES-128-ECB';
+		$cipher = 'AES-128-CBC';
 		$iv     = openssl_random_pseudo_bytes( openssl_cipher_iv_length( $cipher ) );
 
 		$sso_objects = array_map( function( $sso_object ) use ( $iv, $cipher ) {
