@@ -19,6 +19,7 @@ class WP_MultiSite_SSO {
 	const LOGIN_ACTION  = 'sso-login';
 	const LOGOUT_ACTION = 'sso-logout';
 	const SETTINGS_SLUG = 'wp_multisite_sso_settings';
+	const CYPHER        = 'AES-128-CBC';
 
 	private static $user_hash_md5_format = 'multsite_sso-user_id-%s';
 
@@ -144,14 +145,13 @@ class WP_MultiSite_SSO {
 		}
 
 		// encrypt the sso object
-		$cipher = 'AES-128-CBC';
-		$iv     = openssl_random_pseudo_bytes( openssl_cipher_iv_length( $cipher ) );
+		$iv = openssl_random_pseudo_bytes( openssl_cipher_iv_length( self::CYPHER ) );
 
-		$sso_objects = array_map( function( $sso_object ) use ( $iv, $cipher ) {
+		$sso_objects = array_map( function( $sso_object ) use ( $iv ) {
 			// encode the sso object
 			$sso_object = json_encode( $sso_object );
 
-			$cipher_raw = openssl_encrypt( $sso_object, $cipher, substr( AUTH_SALT, 0, 32 ), OPENSSL_RAW_DATA, $iv );
+			$cipher_raw = openssl_encrypt( $sso_object, self::CYPHER, substr( AUTH_SALT, 0, 32 ), OPENSSL_RAW_DATA, $iv );
 			$hmac       = hash_hmac( 'sha256', $cipher_raw, substr( AUTH_SALT, 0, 32 ), true );
 			return base64_encode( $iv . $hmac . $cipher_raw );
 		}, $sso_objects );
@@ -191,13 +191,12 @@ class WP_MultiSite_SSO {
 		$sso         = base64_decode( esc_attr( $request_sso ) );
 
 		// Decrypt the SSO object.
-		$cipher     = 'AES-128-ECB';
-		$ivlen      = openssl_cipher_iv_length( $cipher );
+		$ivlen      = openssl_cipher_iv_length( self::CYPHER );
 		$iv         = substr( $sso, 0, $ivlen );
 		$sha2len    = 32;
 		$hmac       = substr( $sso, $ivlen, $sha2len );
 		$cipher_raw = substr( $sso, $ivlen + $sha2len );
-		$sso        = openssl_decrypt( $cipher_raw, $cipher, substr( AUTH_SALT, 0, 32 ), OPENSSL_RAW_DATA, $iv );
+		$sso        = openssl_decrypt( $cipher_raw, self::CYPHER, substr( AUTH_SALT, 0, 32 ), OPENSSL_RAW_DATA, $iv );
 
 		// PHP 5.6+ timing attack safe comparison.
 		$calcmac = hash_hmac( 'sha256', $cipher_raw, substr( AUTH_SALT, 0, 32 ), true );
