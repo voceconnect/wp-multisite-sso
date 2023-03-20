@@ -1,7 +1,7 @@
 <?php
 /*
   Plugin Name: WP Multisite SSO
-  Version: 1.1.1
+  Version: 1.1.2
   Plugin URI: http://voceconnect.com/
   Description: Single sign on for a multisite network. Users are authenticated across all sites within the network.
   Author: Voce Platforms, Sean McCafferty
@@ -144,8 +144,20 @@ class WP_MultiSite_SSO {
 		}
 
 		// encrypt the sso object
-		$cipher = 'AES-128-CBC';
-		$iv     = openssl_random_pseudo_bytes( openssl_cipher_iv_length( $cipher ) );
+		//$cipher = 'AES-128-ECB';
+		//$iv     = openssl_random_pseudo_bytes( openssl_cipher_iv_length( $cipher ) );
+		
+			/* March 2023 Rewrite for PHP 8 Compatibility */
+		
+			$cipher = 'AES-128-CBC';
+			$iv_length = openssl_cipher_iv_length($cipher);
+
+			if ($iv_length > 0) {
+				$iv = openssl_random_pseudo_bytes($iv_length);
+			} else {
+				// ECB mode or any other mode that does not require an IV
+				$iv = null;
+			}
 
 		$sso_objects = array_map( function( $sso_object ) use ( $iv, $cipher ) {
 			// encode the sso object
@@ -191,7 +203,7 @@ class WP_MultiSite_SSO {
 		$sso         = base64_decode( esc_attr( $request_sso ) );
 
 		// Decrypt the SSO object.
-		$cipher     = 'AES-128-CBC';
+		$cipher     = 'AES-128-ECB';
 		$ivlen      = openssl_cipher_iv_length( $cipher );
 		$iv         = substr( $sso, 0, $ivlen );
 		$sha2len    = 32;
