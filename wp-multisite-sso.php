@@ -144,7 +144,7 @@ class WP_MultiSite_SSO {
 		}
 
 		// encrypt the sso object
-		//$cipher = 'AES-128-ECB';
+		//$cipher = 'AES-128-CBC';
 		//$iv     = openssl_random_pseudo_bytes( openssl_cipher_iv_length( $cipher ) );
 		
 			/* March 2023 Rewrite for PHP 8 Compatibility */
@@ -203,7 +203,7 @@ class WP_MultiSite_SSO {
 		$sso         = base64_decode( esc_attr( $request_sso ) );
 
 		// Decrypt the SSO object.
-		$cipher     = 'AES-128-ECB';
+		$cipher     = 'AES-128-CBC';
 		$ivlen      = openssl_cipher_iv_length( $cipher );
 		$iv         = substr( $sso, 0, $ivlen );
 		$sha2len    = 32;
